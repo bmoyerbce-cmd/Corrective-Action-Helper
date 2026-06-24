@@ -13840,9 +13840,34 @@ module.exports = {
                     </div>
                   </div>
 
+                  <div class="panel" style="box-shadow:none; border-style:dashed;">
+                    <div class="panel-head">
+                      <h2>GitHub Sync</h2>
+                      <p>Save template settings to a JSON file in a GitHub repository. Sync profile values stay in this browser only.</p>
+                    </div>
+                    <div class="panel-body stack">
+                      <div class="field-grid two">
+                        <div class="field"><label for="githubOwner">GitHub owner</label><input id="githubOwner" type="text" placeholder="your-org-or-user" /></div>
+                        <div class="field"><label for="githubRepo">Repository</label><input id="githubRepo" type="text" placeholder="repo-name" /></div>
+                        <div class="field"><label for="githubBranch">Branch</label><input id="githubBranch" type="text" placeholder="main" /></div>
+                        <div class="field"><label for="githubFilePath">JSON file path</label><input id="githubFilePath" type="text" placeholder="config/template-settings.json" /></div>
+                      </div>
+                      <div class="field"><label for="githubToken">GitHub token</label><input id="githubToken" type="password" placeholder="Fine-grained token with Contents read/write" /></div>
+                      <div class="helper-note">Use a fine-grained GitHub token scoped only to the target repository. The token is stored only in this browser when you save the sync profile.</div>
+                      <div class="admin-actions">
+                        <button class="secondary" type="button" id="saveSyncProfileBtn">Save Sync Profile</button>
+                        <button class="secondary" type="button" id="pullFromGithubBtn">Load from GitHub</button>
+                        <button class="secondary" type="button" id="pushToGithubBtn">Save to GitHub</button>
+                      </div>
+                    </div>
+                  </div>
+
                   <div class="admin-actions">
                     <button class="secondary" type="button" id="newTemplateBtn">New Template</button>
                     <button class="ghost" type="button" id="deleteTemplateBtn">Delete Selected Template</button>
+                    <button class="secondary" type="button" id="exportSettingsBtn">Export Settings</button>
+                    <button class="secondary" type="button" id="importSettingsBtn">Import Settings</button>
+                    <input id="importSettingsFile" type="file" accept="application/json,.json" class="hidden" />
                     <button class="primary" type="button" id="saveAdminBtn">Save Admin Settings</button>
                     <button class="secondary" type="button" id="resetAdminBtn">Reset Defaults</button>
                   </div>
@@ -14041,6 +14066,7 @@ module.exports = {
   
   <script>
     const STORAGE_KEY = 'supervisor-counseling-config-v2';
+    const GITHUB_SYNC_STORAGE_KEY = 'supervisor-counseling-github-sync-v1';
     const STANDARD_FORM_TYPES = ['counseling','verbal','written','final'];
     const BUILT_IN_TOKENS = [
       '[Agent Name]',
@@ -14135,7 +14161,8 @@ The Titan Technologies Attendance and Punctuality Policy states that attendance 
     const state = {
       adminUnlocked: false,
       currentAdminTemplateKey: 'flvsDnd',
-      config: loadConfig()
+      config: loadConfig(),
+      githubSync: loadGithubSyncSettings()
     };
 
     const formType = document.getElementById('formType');
@@ -14170,6 +14197,12 @@ The Titan Technologies Attendance and Punctuality Policy states that attendance 
     const adminUnlockedView = document.getElementById('adminUnlockedView');
     const adminSaveStatus = document.getElementById('adminSaveStatus');
     const contractsJson = document.getElementById('contractsJson');
+    const importSettingsFile = document.getElementById('importSettingsFile');
+    const githubOwner = document.getElementById('githubOwner');
+    const githubRepo = document.getElementById('githubRepo');
+    const githubBranch = document.getElementById('githubBranch');
+    const githubFilePath = document.getElementById('githubFilePath');
+    const githubToken = document.getElementById('githubToken');
     const presetRows = document.getElementById('presetRows');
     const tokenRows = document.getElementById('tokenRows');
     const templateAdminSelect = document.getElementById('templateAdminSelect');
@@ -14248,6 +14281,46 @@ The Titan Technologies Attendance and Punctuality Policy states that attendance 
       };
     }
 
+    function normalizeGithubSyncSettings(settings) {
+      return {
+        owner: String((settings && settings.owner) || '').trim(),
+        repo: String((settings && settings.repo) || '').trim(),
+        branch: String((settings && settings.branch) || 'main').trim() || 'main',
+        filePath: String((settings && settings.filePath) || 'config/template-settings.json').trim() || 'config/template-settings.json',
+        token: String((settings && settings.token) || '').trim()
+      };
+    }
+
+    function loadGithubSyncSettings() {
+      try {
+        const raw = localStorage.getItem(GITHUB_SYNC_STORAGE_KEY);
+        return normalizeGithubSyncSettings(raw ? JSON.parse(raw) : {});
+      } catch (err) {
+        return normalizeGithubSyncSettings({});
+      }
+    }
+
+    function saveGithubSyncSettings() {
+      state.githubSync = normalizeGithubSyncSettings({
+        owner: githubOwner.value,
+        repo: githubRepo.value,
+        branch: githubBranch.value,
+        filePath: githubFilePath.value,
+        token: githubToken.value
+      });
+      localStorage.setItem(GITHUB_SYNC_STORAGE_KEY, JSON.stringify(state.githubSync));
+      return state.githubSync;
+    }
+
+    function fillGithubSyncForm() {
+      const sync = normalizeGithubSyncSettings(state.githubSync);
+      githubOwner.value = sync.owner;
+      githubRepo.value = sync.repo;
+      githubBranch.value = sync.branch;
+      githubFilePath.value = sync.filePath;
+      githubToken.value = sync.token;
+    }
+
     function loadConfig() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
@@ -14283,6 +14356,182 @@ The Titan Technologies Attendance and Punctuality Policy states that attendance 
     function saveConfig() {
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state.config));
+    }
+
+    function buildExportConfigPayload() {
+      return {
+        meta: {
+          app: 'Supervisor Counseling Tool',
+          storageKey: STORAGE_KEY,
+          exportedAt: new Date().toISOString(),
+          version: 'github-package-v4'
+        },
+        config: deepClone(state.config)
+      };
+    }
+
+    function utf8ToBase64(value) {
+      const bytes = new TextEncoder().encode(value);
+      let binary = '';
+      bytes.forEach((byte) => {
+        binary += String.fromCharCode(byte);
+      });
+      return btoa(binary);
+    }
+
+    function base64ToUtf8(value) {
+      const binary = atob(value.replace(/\n/g, ''));
+      const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+      return new TextDecoder().decode(bytes);
+    }
+
+    function getGitHubSyncSettingsFromForm() {
+      const sync = saveGithubSyncSettings();
+      if (!sync.owner || !sync.repo || !sync.branch || !sync.filePath) {
+        throw new Error('Complete the GitHub owner, repository, branch, and JSON file path fields.');
+      }
+      return sync;
+    }
+
+    function buildGitHubApiUrl(sync) {
+      return `https://api.github.com/repos/${encodeURIComponent(sync.owner)}/${encodeURIComponent(sync.repo)}/contents/${sync.filePath.split('/').map(encodeURIComponent).join('/')}`;
+    }
+
+    function buildGitHubHeaders(sync, needsWrite = false) {
+      const headers = {
+        'Accept': 'application/vnd.github+json'
+      };
+      if (sync.token) headers.Authorization = `Bearer ${sync.token}`;
+      if (needsWrite) headers['Content-Type'] = 'application/json';
+      return headers;
+    }
+
+    async function fetchGithubFileMetadata(sync) {
+      const url = `${buildGitHubApiUrl(sync)}?ref=${encodeURIComponent(sync.branch)}`;
+      const response = await fetch(url, {
+        headers: buildGitHubHeaders(sync, false)
+      });
+      if (response.status === 404) return null;
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`GitHub read failed (${response.status}). ${errorText || 'Check repository, branch, path, and token permissions.'}`);
+      }
+      return response.json();
+    }
+
+    async function saveSettingsToGithub() {
+      const sync = getGitHubSyncSettingsFromForm();
+      try {
+        const existing = await fetchGithubFileMetadata(sync);
+        const payload = buildExportConfigPayload();
+        const body = {
+          message: `Update supervisor template settings (${new Date().toISOString()})`,
+          content: utf8ToBase64(JSON.stringify(payload, null, 2)),
+          branch: sync.branch
+        };
+        if (existing && existing.sha) body.sha = existing.sha;
+        const response = await fetch(buildGitHubApiUrl(sync), {
+          method: 'PUT',
+          headers: buildGitHubHeaders(sync, true),
+          body: JSON.stringify(body)
+        });
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`GitHub save failed (${response.status}). ${errorText || 'Verify token contents:write access and repository settings.'}`);
+        }
+        adminSaveStatus.textContent = `Settings saved to GitHub: ${sync.owner}/${sync.repo} → ${sync.filePath}`;
+        adminSaveStatus.className = 'status-text success';
+      } catch (error) {
+        adminSaveStatus.textContent = error.message || 'Unable to save settings to GitHub.';
+        adminSaveStatus.className = 'status-text';
+      }
+    }
+
+    async function loadSettingsFromGithub() {
+      const sync = getGitHubSyncSettingsFromForm();
+      try {
+        const existing = await fetchGithubFileMetadata(sync);
+        if (!existing || !existing.content) {
+          throw new Error('The GitHub JSON file was not found. Save once to GitHub first or check the path.');
+        }
+        const parsed = JSON.parse(base64ToUtf8(existing.content));
+        applyImportedConfig(parsed);
+        fillGithubSyncForm();
+        adminSaveStatus.textContent = `Settings loaded from GitHub: ${sync.owner}/${sync.repo} → ${sync.filePath}`;
+        adminSaveStatus.className = 'status-text success';
+      } catch (error) {
+        adminSaveStatus.textContent = error.message || 'Unable to load settings from GitHub.';
+        adminSaveStatus.className = 'status-text';
+      }
+    }
+
+    function applyImportedConfig(rawConfig) {
+      const base = deepClone(DEFAULT_CONFIG);
+      const source = rawConfig && rawConfig.config ? rawConfig.config : rawConfig;
+      const nextConfig = {
+        adminPassword: source && source.adminPassword ? String(source.adminPassword) : base.adminPassword,
+        contracts: Array.isArray(source && source.contracts) && source.contracts.length
+          ? source.contracts.map(normalizeContract).filter((item) => item.label)
+          : base.contracts,
+        customTokens: Array.isArray(source && source.customTokens)
+          ? source.customTokens.map(normalizeCustomToken).filter(Boolean)
+          : base.customTokens.map(normalizeCustomToken).filter(Boolean),
+        reasonTemplates: { none: normalizeTemplate('none', base.reasonTemplates.none) }
+      };
+      const sourceTemplates = source && source.reasonTemplates && typeof source.reasonTemplates === 'object'
+        ? source.reasonTemplates
+        : {};
+      Object.entries({ ...base.reasonTemplates, ...sourceTemplates }).forEach(([key, tpl]) => {
+        if (key === 'none') return;
+        const mergedTemplate = normalizeTemplate(key, { ...(base.reasonTemplates[key] || {}), ...(sourceTemplates[key] || tpl || {}) });
+        const isRemovedLegacyTemplate = key === 'attendanceFinal' || mergedTemplate.label === 'Attendance Final';
+        if (isRemovedLegacyTemplate) return;
+        nextConfig.reasonTemplates[key] = mergedTemplate;
+      });
+      if (!nextConfig.contracts.length) throw new Error('Imported settings must include at least one contract preset.');
+      state.config = nextConfig;
+      state.currentAdminTemplateKey = state.config.reasonTemplates.flvsDnd
+        ? 'flvsDnd'
+        : Object.keys(state.config.reasonTemplates).find((key) => key !== 'none') || null;
+      saveConfig();
+      populateContractSelect();
+      contractSelect.value = '0';
+      populateReasonTemplateSelect('none');
+      fillAdminForm();
+      applyContractPreset();
+      applyType();
+      syncHelperFieldsFromMain();
+      updateTemplateVisibility();
+      syncScorecardPreview();
+    }
+
+    function exportAdminSettings() {
+      try {
+        const payload = buildExportConfigPayload();
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        downloadBlob(blob, `supervisor_template_settings_${new Date().toISOString().slice(0, 10)}.json`);
+        adminSaveStatus.textContent = 'Settings exported.';
+        adminSaveStatus.className = 'status-text success';
+      } catch (error) {
+        adminSaveStatus.textContent = error.message || 'Unable to export settings.';
+        adminSaveStatus.className = 'status-text';
+      }
+    }
+
+    async function importAdminSettingsFromFile(file) {
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        applyImportedConfig(parsed);
+        adminSaveStatus.textContent = 'Settings imported.';
+        adminSaveStatus.className = 'status-text success';
+      } catch (error) {
+        adminSaveStatus.textContent = error.message || 'Unable to import settings.';
+        adminSaveStatus.className = 'status-text';
+      } finally {
+        importSettingsFile.value = '';
+      }
     }
 
     function getSelectedContract() {
@@ -14913,6 +15162,7 @@ The Titan Technologies Attendance and Punctuality Policy states that attendance 
 
     function fillAdminForm() {
       contractsJson.value = JSON.stringify(state.config.contracts, null, 2);
+      fillGithubSyncForm();
       renderPresetRows();
       populateAdminTemplateContractOptions();
       renderTemplateAdminOptions(state.currentAdminTemplateKey || 'flvsDnd');
@@ -15091,6 +15341,24 @@ The Titan Technologies Attendance and Punctuality Policy states that attendance 
     adminTabBtn.addEventListener('click', () => setActiveTab('admin'));
     document.getElementById('unlockAdminBtn').addEventListener('click', unlockAdmin);
     document.getElementById('saveAdminBtn').addEventListener('click', saveAdminSettings);
+    document.getElementById('saveSyncProfileBtn').addEventListener('click', () => {
+      try {
+        saveGithubSyncSettings();
+        adminSaveStatus.textContent = 'GitHub sync profile saved in this browser.';
+        adminSaveStatus.className = 'status-text success';
+      } catch (error) {
+        adminSaveStatus.textContent = error.message || 'Unable to save the GitHub sync profile.';
+        adminSaveStatus.className = 'status-text';
+      }
+    });
+    document.getElementById('pullFromGithubBtn').addEventListener('click', loadSettingsFromGithub);
+    document.getElementById('pushToGithubBtn').addEventListener('click', saveSettingsToGithub);
+    document.getElementById('exportSettingsBtn').addEventListener('click', exportAdminSettings);
+    document.getElementById('importSettingsBtn').addEventListener('click', () => importSettingsFile.click());
+    importSettingsFile.addEventListener('change', (event) => {
+      const [file] = event.target.files || [];
+      importAdminSettingsFromFile(file);
+    });
     document.getElementById('resetAdminBtn').addEventListener('click', resetAdminSettings);
     document.getElementById('newTemplateBtn').addEventListener('click', () => loadTemplateIntoAdminBuilder('__new__'));
     document.getElementById('deleteTemplateBtn').addEventListener('click', deleteSelectedTemplate);
@@ -15103,6 +15371,7 @@ The Titan Technologies Attendance and Punctuality Policy states that attendance 
     });
     templateAdminSelect.addEventListener('change', (e) => loadTemplateIntoAdminBuilder(e.target.value));
 
+    fillGithubSyncForm();
     renderCustomTokenFields();
     populateContractSelect();
     contractSelect.value = '0';
@@ -15115,6 +15384,5 @@ The Titan Technologies Attendance and Punctuality Policy states that attendance 
     setActiveTab('form');
   </script>
 
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
