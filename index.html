@@ -14165,6 +14165,13 @@ The Titan Technologies Attendance and Punctuality Policy states that attendance 
       githubSync: loadGithubSyncSettings()
     };
 
+    Object.keys(state.config.reasonTemplates || {}).forEach((key) => {
+      if (key === 'none') return;
+      if (isLegacyRemovedTemplate(key, state.config.reasonTemplates[key])) {
+        delete state.config.reasonTemplates[key];
+      }
+    });
+
     const formType = document.getElementById('formType');
     const contractSelect = document.getElementById('contractSelect');
     const reasonTemplateSelect = document.getElementById('reasonTemplateSelect');
@@ -14281,6 +14288,16 @@ The Titan Technologies Attendance and Punctuality Policy states that attendance 
       };
     }
 
+    function isLegacyRemovedTemplate(key, template) {
+      const normalizedKey = String(key || '').trim().toLowerCase();
+      const normalizedLabel = String((template && template.label) || '').trim().toLowerCase();
+      return normalizedKey === 'attendancefinal'
+        || normalizedKey === 'attendance_final'
+        || normalizedKey === 'attendance-final'
+        || normalizedLabel === 'attendance final'
+        || normalizedLabel.includes('attendance final');
+    }
+
     function normalizeGithubSyncSettings(settings) {
       return {
         owner: String((settings && settings.owner) || '').trim(),
@@ -14332,22 +14349,31 @@ The Titan Technologies Attendance and Punctuality Policy states that attendance 
           : base.contracts;
         const templates = { none: normalizeTemplate('none', base.reasonTemplates.none) };
         const sourceTemplates = parsed.reasonTemplates && typeof parsed.reasonTemplates === 'object' ? parsed.reasonTemplates : {};
+        let removedLegacyTemplate = false;
         Object.entries({ ...base.reasonTemplates, ...sourceTemplates }).forEach(([key, tpl]) => {
           if (key === 'none') return;
           const mergedTemplate = normalizeTemplate(key, { ...(base.reasonTemplates[key] || {}), ...(sourceTemplates[key] || tpl || {}) });
-          const isRemovedLegacyTemplate = key === 'attendanceFinal' || mergedTemplate.label === 'Attendance Final';
-          if (isRemovedLegacyTemplate) return;
+          if (isLegacyRemovedTemplate(key, mergedTemplate)) {
+            removedLegacyTemplate = true;
+            return;
+          }
           templates[key] = mergedTemplate;
         });
         const customTokens = Array.isArray(parsed.customTokens) && parsed.customTokens.length
           ? parsed.customTokens.map(normalizeCustomToken).filter(Boolean)
           : base.customTokens.map(normalizeCustomToken).filter(Boolean);
-        return {
+        const cleanedConfig = {
           adminPassword: parsed.adminPassword || base.adminPassword,
           customTokens,
           contracts,
           reasonTemplates: templates
         };
+        if (removedLegacyTemplate) {
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanedConfig));
+          } catch (persistErr) {}
+        }
+        return cleanedConfig;
       } catch (err) {
         return deepClone(DEFAULT_CONFIG);
       }
@@ -15372,6 +15398,7 @@ The Titan Technologies Attendance and Punctuality Policy states that attendance 
     templateAdminSelect.addEventListener('change', (e) => loadTemplateIntoAdminBuilder(e.target.value));
 
     fillGithubSyncForm();
+    saveConfig();
     renderCustomTokenFields();
     populateContractSelect();
     contractSelect.value = '0';
@@ -15384,5 +15411,6 @@ The Titan Technologies Attendance and Punctuality Policy states that attendance 
     setActiveTab('form');
   </script>
 
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
