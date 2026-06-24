@@ -2,11 +2,38 @@
   "meta": {
     "app": "Supervisor Counseling Tool",
     "storageKey": "supervisor-counseling-config-v2",
-    "exportedAt": "2026-06-24T23:43:58.714Z",
+    "exportedAt": "2026-06-24T23:44:36.051Z",
     "version": "github-package-v4"
   },
   "config": {
     "adminPassword": "Titan2026!$",
+    "contracts": [
+      {
+        "label": "FLVS",
+        "jobTitle": "Help Desk Coordinator II",
+        "location": "Remote"
+      },
+      {
+        "label": "OSCD",
+        "jobTitle": "Help Desk Coordinator II",
+        "location": "Remote"
+      },
+      {
+        "label": "OCPS",
+        "jobTitle": "Help Desk Coordinator II",
+        "location": "Remote"
+      },
+      {
+        "label": "IEN",
+        "jobTitle": "Help Desk Coordinator II",
+        "location": "Remote"
+      },
+      {
+        "label": "Titan Help Desk",
+        "jobTitle": "Help Desk Coordinator II",
+        "location": "Remote"
+      }
+    ],
     "customTokens": [
       {
         "token": "[identified date]",
@@ -67,33 +94,6 @@
         "token": "[Date3]",
         "label": "Date of Meeting",
         "defaultValue": ""
-      }
-    ],
-    "contracts": [
-      {
-        "label": "FLVS",
-        "jobTitle": "Help Desk Coordinator II",
-        "location": "Remote"
-      },
-      {
-        "label": "OSCD",
-        "jobTitle": "Help Desk Coordinator II",
-        "location": "Remote"
-      },
-      {
-        "label": "OCPS",
-        "jobTitle": "Help Desk Coordinator II",
-        "location": "Remote"
-      },
-      {
-        "label": "IEN",
-        "jobTitle": "Help Desk Coordinator II",
-        "location": "Remote"
-      },
-      {
-        "label": "Titan Help Desk",
-        "jobTitle": "Help Desk Coordinator II",
-        "location": "Remote"
       }
     ],
     "reasonTemplates": {
@@ -204,6 +204,20 @@
         "policy": "Attendance and Punctuality Policy - [Reason for auto fail directly from the attendance Policy]",
         "corrective": "[Agent Name] and [Sup Name] reviewed the Attendance and Punctuality Policy on [Date3] with [HCM Witness] as a witness. A copy of the policy was previously provided to [Agent Name] via email and is on file with his signed acknowledgment dated [Signed Date]. [Agent Name] understands that any further violation of the Attendance and Punctuality Policy may result in additional corrective action, up to and including termination of employment.",
         "consequences": "Additional infractions of Titan Technologies attendance or related company policy may result in additional corrective action, up to and including termination of employment."
+      },
+      "flvs_do_not_do_policy_test": {
+        "label": "FLVS Do Not Do Policy TEST",
+        "contractLabel": "FLVS",
+        "applyFormTypes": [
+          "written"
+        ],
+        "helperTokens": [],
+        "reasonTop": "sdfasdf",
+        "reasonBottom": "safasf",
+        "prior": "safd",
+        "policy": "asdfasdf",
+        "corrective": "asdfasdf",
+        "consequences": "asdfasdf"
       }
     }
   }
