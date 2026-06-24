@@ -14261,7 +14261,10 @@ The Titan Technologies Attendance and Punctuality Policy states that attendance 
         const sourceTemplates = parsed.reasonTemplates && typeof parsed.reasonTemplates === 'object' ? parsed.reasonTemplates : {};
         Object.entries({ ...base.reasonTemplates, ...sourceTemplates }).forEach(([key, tpl]) => {
           if (key === 'none') return;
-          templates[key] = normalizeTemplate(key, { ...(base.reasonTemplates[key] || {}), ...(sourceTemplates[key] || tpl || {}) });
+          const mergedTemplate = normalizeTemplate(key, { ...(base.reasonTemplates[key] || {}), ...(sourceTemplates[key] || tpl || {}) });
+          const isRemovedLegacyTemplate = key === 'attendanceFinal' || mergedTemplate.label === 'Attendance Final';
+          if (isRemovedLegacyTemplate) return;
+          templates[key] = mergedTemplate;
         });
         const customTokens = Array.isArray(parsed.customTokens) && parsed.customTokens.length
           ? parsed.customTokens.map(normalizeCustomToken).filter(Boolean)
