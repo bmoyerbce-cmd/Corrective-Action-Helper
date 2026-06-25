@@ -14449,24 +14449,40 @@ The Titan Technologies Attendance and Punctuality Policy states that attendance 
     async function saveSettingsToGithub() {
       const sync = getGitHubSyncSettingsFromForm();
       try {
-        const existing = await fetchGithubFileMetadata(sync);
         const payload = buildExportConfigPayload();
-        const body = {
-          message: `Update supervisor template settings (${new Date().toISOString()})`,
-          content: utf8ToBase64(JSON.stringify(payload, null, 2)),
-          branch: sync.branch
+        const buildBody = (sha = undefined) => {
+          const body = {
+            message: `Update supervisor template settings (${new Date().toISOString()})`,
+            content: utf8ToBase64(JSON.stringify(payload, null, 2)),
+            branch: sync.branch
+          };
+          if (sha) body.sha = sha;
+          return body;
         };
-        if (existing && existing.sha) body.sha = existing.sha;
-        const response = await fetch(buildGitHubApiUrl(sync), {
+
+        let existing = await fetchGithubFileMetadata(sync);
+        let body = buildBody(existing && existing.sha ? existing.sha : undefined);
+        let response = await fetch(buildGitHubApiUrl(sync), {
           method: 'PUT',
           headers: buildGitHubHeaders(sync, true),
           body: JSON.stringify(body)
         });
+
+        if (response.status === 409) {
+          existing = await fetchGithubFileMetadata(sync);
+          body = buildBody(existing && existing.sha ? existing.sha : undefined);
+          response = await fetch(buildGitHubApiUrl(sync), {
+            method: 'PUT',
+            headers: buildGitHubHeaders(sync, true),
+            body: JSON.stringify(body)
+          });
+        }
+
         if (!response.ok) {
           const errorText = await response.text();
           throw new Error(`GitHub save failed (${response.status}). ${errorText || 'Verify token contents:write access and repository settings.'}`);
         }
-        adminSaveStatus.textContent = `Settings saved to GitHub: ${sync.owner}/${sync.repo} → ${sync.filePath}. Refresh or reopen the site to pull the published templates.`;
+        adminSaveStatus.textContent = `Settings saved to GitHub: ${sync.owner}/${sync.repo} → ${sync.filePath}. If another browser updated the file at the same time, this build automatically retried with the latest SHA.`;
         adminSaveStatus.className = 'status-text success';
       } catch (error) {
         adminSaveStatus.textContent = error.message || 'Unable to save settings to GitHub.';
