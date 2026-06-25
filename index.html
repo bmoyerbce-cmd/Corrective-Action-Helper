@@ -14466,7 +14466,7 @@ The Titan Technologies Attendance and Punctuality Policy states that attendance 
           const errorText = await response.text();
           throw new Error(`GitHub save failed (${response.status}). ${errorText || 'Verify token contents:write access and repository settings.'}`);
         }
-        adminSaveStatus.textContent = `Settings saved to GitHub: ${sync.owner}/${sync.repo} → ${sync.filePath}`;
+        adminSaveStatus.textContent = `Settings saved to GitHub: ${sync.owner}/${sync.repo} → ${sync.filePath}. Refresh or reopen the site to pull the published templates.`;
         adminSaveStatus.className = 'status-text success';
       } catch (error) {
         adminSaveStatus.textContent = error.message || 'Unable to save settings to GitHub.';
@@ -14489,6 +14489,18 @@ The Titan Technologies Attendance and Punctuality Policy states that attendance 
       } catch (error) {
         adminSaveStatus.textContent = error.message || 'Unable to load settings from GitHub.';
         adminSaveStatus.className = 'status-text';
+      }
+    }
+
+    async function autoLoadPublishedConfig() {
+      const rawPath = './config/template-settings.json';
+      try {
+        const response = await fetch(`${rawPath}?v=${Date.now()}`, { cache: 'no-store' });
+        if (!response.ok) return;
+        const parsed = await response.json();
+        applyImportedConfig(parsed);
+      } catch (error) {
+        console.warn('Published template config not loaded.', error);
       }
     }
 
@@ -15427,6 +15439,7 @@ The Titan Technologies Attendance and Punctuality Policy states that attendance 
     updateTemplateVisibility();
     syncScorecardPreview();
     setActiveTab('form');
+    autoLoadPublishedConfig();
   </script>
 
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
