@@ -2,11 +2,38 @@
   "meta": {
     "app": "Supervisor Counseling Tool",
     "storageKey": "supervisor-counseling-config-v2",
-    "exportedAt": "2026-06-25T01:09:42.186Z",
+    "exportedAt": "2026-06-25T01:22:59.506Z",
     "version": "github-package-v4"
   },
   "config": {
     "adminPassword": "Titan2026!$",
+    "contracts": [
+      {
+        "label": "FLVS",
+        "jobTitle": "Help Desk Coordinator II",
+        "location": "Remote"
+      },
+      {
+        "label": "OSCD",
+        "jobTitle": "Help Desk Coordinator II",
+        "location": "Remote"
+      },
+      {
+        "label": "OCPS",
+        "jobTitle": "Help Desk Coordinator II",
+        "location": "Remote"
+      },
+      {
+        "label": "IEN",
+        "jobTitle": "Help Desk Coordinator II",
+        "location": "Remote"
+      },
+      {
+        "label": "Titan Help Desk",
+        "jobTitle": "Help Desk Coordinator II",
+        "location": "Remote"
+      }
+    ],
     "customTokens": [
       {
         "token": "[identified date]",
@@ -67,33 +94,6 @@
         "token": "[Date3]",
         "label": "Date of Meeting",
         "defaultValue": ""
-      }
-    ],
-    "contracts": [
-      {
-        "label": "FLVS",
-        "jobTitle": "Help Desk Coordinator II",
-        "location": "Remote"
-      },
-      {
-        "label": "OSCD",
-        "jobTitle": "Help Desk Coordinator II",
-        "location": "Remote"
-      },
-      {
-        "label": "OCPS",
-        "jobTitle": "Help Desk Coordinator II",
-        "location": "Remote"
-      },
-      {
-        "label": "IEN",
-        "jobTitle": "Help Desk Coordinator II",
-        "location": "Remote"
-      },
-      {
-        "label": "Titan Help Desk",
-        "jobTitle": "Help Desk Coordinator II",
-        "location": "Remote"
       }
     ],
     "reasonTemplates": {
