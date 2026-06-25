@@ -13858,6 +13858,7 @@ module.exports = {
                         <button class="secondary" type="button" id="saveSyncProfileBtn">Save Sync Profile</button>
                         <button class="secondary" type="button" id="pullFromGithubBtn">Load from GitHub</button>
                         <button class="secondary" type="button" id="pushToGithubBtn">Save to GitHub</button>
+                        <button class="primary" type="button" id="publishTemplateBtn">Publish Template</button>
                       </div>
                     </div>
                   </div>
@@ -15289,10 +15290,26 @@ The Titan Technologies Attendance and Punctuality Policy states that attendance 
         updateTemplateVisibility();
         adminSaveStatus.textContent = 'Admin settings saved.';
         adminSaveStatus.className = 'status-text success';
+        return true;
       } catch (error) {
         adminSaveStatus.textContent = error.message || 'Unable to save settings.';
         adminSaveStatus.className = 'status-text';
+        return false;
       }
+    }
+
+    async function publishTemplateToGithub() {
+      const templateName = templateNameInput.value.trim();
+      if (!templateName) {
+        adminSaveStatus.textContent = 'Enter a template name before publishing.';
+        adminSaveStatus.className = 'status-text';
+        return;
+      }
+      const saved = saveAdminSettings();
+      if (!saved) return;
+      adminSaveStatus.textContent = `Publishing ${templateName} to GitHub...`;
+      adminSaveStatus.className = 'status-text';
+      await saveSettingsToGithub();
     }
 
     function deleteSelectedTemplate() {
@@ -15379,6 +15396,7 @@ The Titan Technologies Attendance and Punctuality Policy states that attendance 
     });
     document.getElementById('pullFromGithubBtn').addEventListener('click', loadSettingsFromGithub);
     document.getElementById('pushToGithubBtn').addEventListener('click', saveSettingsToGithub);
+    document.getElementById('publishTemplateBtn').addEventListener('click', publishTemplateToGithub);
     document.getElementById('exportSettingsBtn').addEventListener('click', exportAdminSettings);
     document.getElementById('importSettingsBtn').addEventListener('click', () => importSettingsFile.click());
     importSettingsFile.addEventListener('change', (event) => {
@@ -15411,6 +15429,7 @@ The Titan Technologies Attendance and Punctuality Policy states that attendance 
     setActiveTab('form');
   </script>
 
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
