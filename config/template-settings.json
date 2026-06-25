@@ -2,7 +2,7 @@
   "meta": {
     "app": "Supervisor Counseling Tool",
     "storageKey": "supervisor-counseling-config-v2",
-    "exportedAt": "2026-06-25T01:09:39.034Z",
+    "exportedAt": "2026-06-25T01:09:42.186Z",
     "version": "github-package-v4"
   },
   "config": {
@@ -209,7 +209,9 @@
         "label": "FLVS Do Not Do Policy TEST",
         "contractLabel": "FLVS",
         "applyFormTypes": [
-          "written"
+          "verbal",
+          "written",
+          "final"
         ],
         "helperTokens": [],
         "reasonTop": "sdfasdf",
