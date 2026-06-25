@@ -2,7 +2,7 @@
   "meta": {
     "app": "Supervisor Counseling Tool",
     "storageKey": "supervisor-counseling-config-v2",
-    "exportedAt": "2026-06-25T01:31:38.835Z",
+    "exportedAt": "2026-06-25T01:32:50.321Z",
     "version": "github-package-v4"
   },
   "config": {
@@ -204,22 +204,6 @@
         "policy": "Attendance and Punctuality Policy - [Reason for auto fail directly from the attendance Policy]",
         "corrective": "[Agent Name] and [Sup Name] reviewed the Attendance and Punctuality Policy on [Date3] with [HCM Witness] as a witness. A copy of the policy was previously provided to [Agent Name] via email and is on file with his signed acknowledgment dated [Signed Date]. [Agent Name] understands that any further violation of the Attendance and Punctuality Policy may result in additional corrective action, up to and including termination of employment.",
         "consequences": "Additional infractions of Titan Technologies attendance or related company policy may result in additional corrective action, up to and including termination of employment."
-      },
-      "test": {
-        "label": "TEST",
-        "contractLabel": "FLVS",
-        "applyFormTypes": [
-          "verbal",
-          "written",
-          "final"
-        ],
-        "helperTokens": [],
-        "reasonTop": "TEST",
-        "reasonBottom": "",
-        "prior": "",
-        "policy": "",
-        "corrective": "",
-        "consequences": ""
       }
     }
   }
